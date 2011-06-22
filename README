@@ -1,0 +1,75 @@
+initrampicker
+作った人：chromabox
+
+
+-------------------------------------------------------------------------------
+・これはなに？
+
+カーネルのzImageからinitramfs(cpio形式)を抜き出します。
+とある目的の為に製作しました。
+LZO、GZIPどちらの形式でも対応しています。
+
+
+-------------------------------------------------------------------------------
+・前提
+
+Linuxで動作確認していますのでLinuxが望ましいです。
+また、圧縮の展開にlzopとgunzipを使いますのでこれらのコマンドが必要です。
+
+もしかしたらこの２つのコマンドさえあれば、Windows（Cygwin）、Macでも動くかも。
+
+-------------------------------------------------------------------------------
+・作り方
+
+Linuxとかcygwinで
+$ make
+
+すればOK。
+
+・つかいかた
+
+$ initrampicker zImageファイル名 出力ファイル名
+
+としてください。
+
+[例示]
+$ initrampicker zImage_l cpiotes.cpio
+initram picker 1.00.00
+check zimage file...
+zimage LZO compressed.
+decompress file...
+lzop: tempdec00.lzo: warning: ignoring trailing garbage in lzop file
+lzop -d  tempdec00.lzo 
+ returncode 512
+decompress success.
+check cpio image file...
+pickup cpio file... 
+found end marker file...
+pickup cpio success.
+
+$ cpio -itvn < cpiotes.cpio  (確認の意味でのリスト表示)
+drwxrwxr-x  12 0        0               0 Jun 14 16:09 .
+drwxrwxr-x   2 0        0               0 Jun 14 16:09 data
+-rw-rw-r--   1 0        0               0 Jun 14 16:09 data/.gitignore
+drwxrwxr-x   2 0        0               0 Jun 14 16:09 tmp
+-rw-rw-r--   1 0        0               0 Jun 14 16:09 tmp/.gitignore
+-rw-rw-r--   1 0        0            2009 Jun 14 16:09 recovery.rc
+…
+
+$ cpio -idmv < cpiotes.cpio （この位置に展開）
+.
+data
+data/.gitignore
+tmp
+tmp/.gitignore
+recovery.rc
+sys
+
+
+
+-------------------------------------------------------------------------------
+・履歴
+
+ver 1.00.00 
+  必要になるかもしれないので作成。
+
