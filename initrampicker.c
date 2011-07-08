@@ -12,20 +12,26 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-static const char* VERSTR="1.00.00";
+static const char* VERSTR="1.01.00";
 
-static const char gzip_signature[3] = {0x1F,0x8B,0x08};
-static const char lzo_signature[9]  = {0x89,0x4C,0x5A,0x4F,0x00,0x0D,0x0A,0x1A,0x0A};
+static const char gzip_signature[3] =  {0x1F,0x8B,0x08};
+static const char lzo_signature[9]  =  {0x89,0x4C,0x5A,0x4F,0x00,0x0D,0x0A,0x1A,0x0A};
+// lzma -9 stream (XX = compress type 00 02 = -9. FF-FF: lzma stream type)
+static const char lzma_signature[13] = {0x5D,0x00,0x00,0x00,0x02,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 
-static const char cpio_signature[5]   = {0x30,0x37,0x30,0x37,0x30};	// 07070
+static const char cpio_signature[5] =  {0x30,0x37,0x30,0x37,0x30};	// 07070
+
+
 
 static const char trailer_signature[11] = {0x54,0x52,0x41,0x49,0x4C,0x45,0x52,0x21,0x21,0x21,0x00}; // TRAILER!!!
 
 static const char *gzip_ext= "gz";
 static const char *lzo_ext= "lzo";
+static const char *lzma_ext= "lzma";
 
 static const char *gzip_cmd = "gunzip ";
 static const char *lzo_cmd = "lzop -d ";
+static const char *lzma_cmd = "lzma -d ";
 
 // mapping file image
 char* image_open(char *fname,struct stat *sb)
@@ -124,7 +130,6 @@ int write_image(char *fname,char *image,size_t length,off_t bountary)
 int decompress_zimage(char *fname,char *decname)
 {
 	char *zimage=NULL;
-	char format_kind=0;
 	char tempfn[FILENAME_MAX];
 	char execcmd[FILENAME_MAX];
 	const char *extname=NULL;
@@ -140,13 +145,18 @@ int decompress_zimage(char *fname,char *decname)
 	}
 	
 	printf("check zimage file...\n");
-	if(check_sign(zimage,zimage_stat.st_size,&z_offset,lzo_signature,9,1) == 0){
-		format_kind = 1; //LZO
+	if(check_sign(zimage,zimage_stat.st_size,&z_offset,lzma_signature,13,0) == 0){
+		// LZMA
+		extname = lzma_ext;
+		extcmd = lzma_cmd;
+		printf("zimage LZMA compressed.\n");
+	}else if(check_sign(zimage,zimage_stat.st_size,&z_offset,lzo_signature,9,1) == 0){
+		// LZO
 		extname = lzo_ext;
 		extcmd = lzo_cmd;
 		printf("zimage LZO compressed.\n");
 	}else if(check_sign(zimage,zimage_stat.st_size,&z_offset,gzip_signature,3,0) == 0){
-		format_kind = 2; //gzip
+		// Gnu ZIP
 		extname = gzip_ext;
 		extcmd = gzip_cmd;
 		printf("zimage gzip compressed.\n");
